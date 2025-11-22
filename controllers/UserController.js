@@ -65,14 +65,14 @@ const UserController = {
   },
 
   // ---------- ADMIN USER MANAGEMENT ----------
-  listUsers: (req, res) => {
+  listUser: (req, res) => {
     const sql = 'SELECT * FROM users';
     db.query(sql, (err, users) => {
       if (err) {
         console.error('Error fetching users:', err);
         return res.status(500).send('Error retrieving users');
       }
-      res.render('listUsers', { users, user: req.session.user });
+      res.render('listUser', { users, user: req.session.user });
     });
   },
 
