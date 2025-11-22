@@ -133,11 +133,11 @@ app.get('/admin', checkAuthenticated, checkAdmin, (req, res) => {
 });
 
 // ✅ Admin: List all users
-app.get('/listUsers', checkAuthenticated, checkAdmin, (req, res) => {
+app.get('/listUser', checkAuthenticated, checkAdmin, (req, res) => {
   const db = require('./db');
   db.query('SELECT * FROM users', (err, users) => {
     if (err) return res.status(500).send('Error retrieving users');
-    res.render('listUsers', {
+    res.render('listUser', {
       users,
       user: req.session.user,
       messages: req.flash('error'),

@@ -100,7 +100,7 @@ const UserController = {
         return res.redirect('/addUser');
       }
       req.flash('success', 'User added successfully.');
-      res.redirect('/listUsers');
+      res.redirect('/listUser');
     });
   },
 
@@ -112,11 +112,11 @@ const UserController = {
       if (err) {
         console.error('Error fetching user:', err);
         req.flash('error', 'Error retrieving user');
-        return res.redirect('/listUsers');
+        return res.redirect('/listUser');
       }
       if (results.length === 0) {
         req.flash('error', 'User not found');
-        return res.redirect('/listUsers');
+        return res.redirect('/listUser');
       }
       res.render('updateUser', {
         userData: results[0],
@@ -159,7 +159,7 @@ const UserController = {
         return res.redirect(`/updateUser/${id}`);
       }
       req.flash('success', 'User updated successfully.');
-      res.redirect('/listUsers');
+      res.redirect('/listUser');
     });
   },
 
@@ -170,10 +170,10 @@ const UserController = {
       if (err) {
         console.error('Error deleting user:', err);
         req.flash('error', 'Error deleting user.');
-        return res.redirect('/listUsers');
+        return res.redirect('/listUser');
       }
       req.flash('success', 'User deleted.');
-      res.redirect('/listUsers');
+      res.redirect('/listUser');
     });
   }
 };
