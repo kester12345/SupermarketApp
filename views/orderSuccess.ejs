@@ -1,0 +1,23 @@
+<h2>Order Successful!</h2>
+<p>Your order ID: <%= orderId %></p>
+
+<table class="table">
+  <thead>
+    <tr>
+      <th>Product</th>
+      <th>Qty</th>
+      <th>Subtotal</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% items.forEach(i => { %>
+      <tr>
+        <td><%= i.productName %></td>
+        <td><%= i.quantity %></td>
+        <td>$<%= (i.price * i.quantity).toFixed(2) %></td>
+      </tr>
+    <% }) %>
+  </tbody>
+</table>
+
+<a href="/shopping" class="btn btn-primary">Continue Shopping</a>

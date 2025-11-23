@@ -11,6 +11,8 @@ const db = require('./db');
 const ProductController = require('./controllers/ProductController');
 const UserController = require('./controllers/UserController');
 const CartController = require('./controllers/CartController'); 
+const OrderController = require('./controllers/OrderController');
+
 
 // Set up multer for file uploads
 const storage = multer.diskStorage({
@@ -177,61 +179,33 @@ app.get('/remove-from-cart/:id', checkAuthenticated, CartController.removeFromCa
 app.get('/clear-cart', checkAuthenticated, CartController.clearCart);
 
 
+// Checkout page - GET
 app.get('/checkout', checkAuthenticated, (req, res) => {
-    const cart = req.session.cart || [];
+  const cart = req.session.cart || [];
+  const selectedIds = req.query.ids;
 
-    if (cart.length === 0) {
-        req.flash('error', 'Your cart is empty.');
-        return res.redirect('/cart');
-    }
+  if (!selectedIds) {
+    req.flash('error', 'Please select items to checkout.');
+    return res.redirect('/cart');
+  }
 
-    const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-    res.render('checkout', { cart, total, user: req.session.user });
+  const idsArray = Array.isArray(selectedIds)
+    ? selectedIds.map(id => parseInt(id))
+    : [parseInt(selectedIds)];
+
+  const selectedItems = cart.filter(item => idsArray.includes(item.id));
+  const total = selectedItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
+
+  res.render('checkout', {
+    cart: selectedItems,
+    total,
+    ids: idsArray,
+    user: req.session.user
+  });
 });
 
-// Confirm checkout (update stock + clear cart)
-app.post('/checkout', checkAuthenticated, (req, res) => {
-    const cart = req.session.cart || [];
-    const selectedIds = req.body.selectedItems;
-
-    if (!selectedIds) {
-        req.flash('error', 'Please select at least one item to checkout.');
-        return res.redirect('/cart');
-    }
-
-    const idsArray = Array.isArray(selectedIds)
-        ? selectedIds.map(id => parseInt(id))
-        : [parseInt(selectedIds)];
-
-    const selectedItems = cart.filter(item => idsArray.includes(item.id));
-
-    if (selectedItems.length === 0) {
-        req.flash('error', 'Selected items not found in cart.');
-        return res.redirect('/cart');
-    }
-
-    const updates = selectedItems.map(item => {
-        return new Promise((resolve, reject) => {
-            const sql = 'UPDATE products SET quantity = quantity - ? WHERE id = ? AND quantity >= ?';
-            db.query(sql, [item.quantity, item.id, item.quantity], (err, result) => {
-                if (err) reject(err);
-                else resolve(result);
-            });
-        });
-    });
-
-    Promise.all(updates)
-        .then(() => {
-            req.session.cart = cart.filter(item => !idsArray.includes(item.id));
-            req.flash('success', 'Checkout successful for selected items!');
-            res.redirect('/shopping');
-        })
-        .catch(err => {
-            console.error('Checkout error:', err);
-            req.flash('error', 'Checkout failed. Please try again.');
-            res.redirect('/cart');
-        });
-});
+// Checkout confirm - POST
+app.post('/checkout', checkAuthenticated, OrderController.checkoutSelected);
 
 
 // ===============================
