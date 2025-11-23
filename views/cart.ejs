@@ -36,50 +36,52 @@
     <hr>
 
     <% if (cart && cart.length > 0) { %>
-      <table class="table table-bordered align-middle text-center shadow-sm">
-        <thead class="table-dark">
-          <tr>
-            <th>Product</th>
-            <th>Image</th>
-            <th>Price</th>
-            <th>Quantity</th>
-            <th>Subtotal</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% cart.forEach(item => { %>
+      <form action="/checkout" method="POST">
+        <table class="table table-bordered align-middle text-center shadow-sm">
+          <thead class="table-dark">
             <tr>
-              <td><%= item.productName %></td>
-              <td><img src="/images/<%= item.image %>" width="70" alt="<%= item.productName %>"></td>
-              <td>$<%= item.price.toFixed(2) %></td>
-              <td><%= item.quantity %></td>
-              <td>$<%= (item.price * item.quantity).toFixed(2) %></td>
-              <td>
-                <a href="/remove-from-cart/<%= item.id %>" class="btn btn-danger btn-sm">Remove</a>
-              </td>
+              <th>Select</th>
+              <th>Product</th>
+              <th>Image</th>
+              <th>Price</th>
+              <th>Quantity</th>
+              <th>Subtotal</th>
+              <th>Action</th>
             </tr>
-          <% }); %>
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            <% cart.forEach(item => { %>
+              <tr>
+                <td>
+                  <input type="checkbox" name="selectedItems" value="<%= item.id %>">
+                </td>
+                <td><%= item.productName %></td>
+                <td><img src="/images/<%= item.image %>" width="70" alt="<%= item.productName %>"></td>
+                <td>$<%= item.price.toFixed(2) %></td>
+                <td><%= item.quantity %></td>
+                <td>$<%= (item.price * item.quantity).toFixed(2) %></td>
+                <td>
+                  <a href="/remove-from-cart/<%= item.id %>" class="btn btn-danger btn-sm">Remove</a>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
 
       <div class="text-end mt-4">
         <h4><strong>Total: $<%= total.toFixed(2) %></strong></h4>
 
-        <a href="/clear-cart" 
-            class="btn btn-danger mt-2"
-            onclick="return confirm('Clear entire cart?')">
-            Clear Cart
-        </a>
+        <a href="/clear-cart" class="btn btn-danger mt-2"
+          onclick="return confirm('Clear entire cart?')">Clear Cart</a>
 
-        <a href="/shopping" class="btn btn-secondary mt-2">
-          Continue Shopping
-        </a>
+        <a href="/shopping" class="btn btn-secondary mt-2">Continue Shopping</a>
 
-        <a href="/checkout" class="btn btn-success mt-2">
-          Proceed to Checkout
-        </a>
+        <!-- NEW BUTTON: checkout selected only -->
+        <button type="submit" class="btn btn-success mt-2">
+          Proceed with Selected Items
+        </button>
       </div>
+      </form>
     <% } else { %>
       <div class="alert alert-warning text-center mt-5 p-4 shadow-sm">
         <h4>Your cart is empty 🛒</h4>

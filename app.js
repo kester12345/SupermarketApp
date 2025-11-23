@@ -192,14 +192,25 @@ app.get('/checkout', checkAuthenticated, (req, res) => {
 // Confirm checkout (update stock + clear cart)
 app.post('/checkout', checkAuthenticated, (req, res) => {
     const cart = req.session.cart || [];
+    const selectedIds = req.body.selectedItems;
 
-    if (cart.length === 0) {
-        req.flash('error', 'Your cart is empty.');
+    if (!selectedIds) {
+        req.flash('error', 'Please select at least one item to checkout.');
         return res.redirect('/cart');
     }
 
-    // Reduce product quantity in database
-    const updates = cart.map(item => {
+    const idsArray = Array.isArray(selectedIds)
+        ? selectedIds.map(id => parseInt(id))
+        : [parseInt(selectedIds)];
+
+    const selectedItems = cart.filter(item => idsArray.includes(item.id));
+
+    if (selectedItems.length === 0) {
+        req.flash('error', 'Selected items not found in cart.');
+        return res.redirect('/cart');
+    }
+
+    const updates = selectedItems.map(item => {
         return new Promise((resolve, reject) => {
             const sql = 'UPDATE products SET quantity = quantity - ? WHERE id = ? AND quantity >= ?';
             db.query(sql, [item.quantity, item.id, item.quantity], (err, result) => {
@@ -211,8 +222,8 @@ app.post('/checkout', checkAuthenticated, (req, res) => {
 
     Promise.all(updates)
         .then(() => {
-            req.session.cart = []; // clear cart
-            req.flash('success', 'Checkout successful! Stock updated.');
+            req.session.cart = cart.filter(item => !idsArray.includes(item.id));
+            req.flash('success', 'Checkout successful for selected items!');
             res.redirect('/shopping');
         })
         .catch(err => {
@@ -221,6 +232,7 @@ app.post('/checkout', checkAuthenticated, (req, res) => {
             res.redirect('/cart');
         });
 });
+
 
 // ===============================
 // SERVER
