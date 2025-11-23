@@ -7,15 +7,11 @@
   <title>Add New User</title>
 </head>
 <body>
-  <nav class="navbar navbar-expand-sm bg-dark navbar-dark">
-    <div class="container-fluid">
-      <a class="navbar-brand" href="/">Supermarket App</a>
-      <ul class="navbar-nav">
-        <li class="nav-item"><a class="nav-link" href="/listUser">Manage Users</a></li>
-        <li class="nav-item"><a class="nav-link" href="/logout">Logout</a></li>
-      </ul>
-    </div>
-  </nav>
+  <% if (user && user.role === 'admin') { %>
+    <%- include('partials/navbar_admin', { user }) %>
+  <% } else { %>
+    <%- include('partials/navbar', { user }) %>
+  <% } %>
 
   <div class="container mt-5" style="max-width: 900px;">
     <h2 class="mb-4">Add New User</h2>
@@ -67,5 +63,6 @@
       <a href="/listUser" class="btn btn-secondary">Cancel</a>
     </form>
   </div>
+  <%- include('partials/footer') %>
 </body>
 </html>

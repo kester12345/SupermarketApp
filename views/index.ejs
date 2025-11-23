@@ -51,33 +51,6 @@
 </head>
 
 <body>
-  <!-- Navbar -->
-  <nav class="navbar navbar-expand-sm navbar-dark bg-dark">
-    <div class="container-fluid">
-      <a class="navbar-brand" href="/">Supermarket App</a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-
-      <div class="collapse navbar-collapse" id="navbarNav">
-        <ul class="navbar-nav ms-auto">
-          <% if (!user) { %>
-            <li class="nav-item">
-              <a class="nav-link" href="/register">Register</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="/login">Login</a>
-            </li>
-          <% } else { %>
-            <li class="nav-item">
-              <a class="nav-link" href="/logout">Logout</a>
-            </li>
-          <% } %>
-        </ul>
-      </div>
-    </div>
-  </nav>
-
   <!-- Main Content -->
   <div class="container">
     <div class="welcome-box mx-auto col-md-6">
@@ -107,5 +80,6 @@
       <% } %>
     </div>
   </div>
+  <%- include('partials/footer') %>
 </body>
 </html>
