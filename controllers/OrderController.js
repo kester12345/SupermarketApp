@@ -4,6 +4,9 @@ const db = require('../db');
 
 const OrderController = {
 
+  // =============================
+  // USER — CHECKOUT SELECTED ITEMS
+  // =============================
   checkoutSelected: (req, res) => {
 
     const cart = req.session.cart || [];
@@ -57,7 +60,7 @@ const OrderController = {
       Promise.all([...itemPromises, ...stockPromises])
         .then(() => {
 
-          // FIXED: remove only purchased items
+          // Remove only purchased items
           req.session.cart = cart.filter(i => !idsArray.includes(i.id));
 
           req.session.save(() => {
@@ -75,7 +78,51 @@ const OrderController = {
           res.redirect("/cart");
         });
 
-    }); // end create order
+    }); // end Order.create
+  },
+
+  // =============================
+  // ADMIN — VIEW ALL ORDERS
+  // =============================
+  viewAllOrders: (req, res) => {
+    Order.getAll((err, orders) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).send("Failed to load order history");
+      }
+
+      res.render('orderHistory', {
+        user: req.session.user,
+        orders
+      });
+    });
+  },
+
+  // =============================
+  // ADMIN — VIEW INDIVIDUAL ORDER DETAILS
+  // =============================
+  viewOrderDetails: (req, res) => {
+    const orderId = req.params.id;
+
+    Order.getWithItems(orderId, (err, rows) => {
+      if (err || rows.length === 0) {
+        console.error(err);
+        return res.status(500).send("Order details not found");
+      }
+
+      const order = {
+        order_id: rows[0].order_id,
+        user_id: rows[0].user_id,
+        paymentMode: rows[0].paymentMode,
+        status: rows[0].status,
+        items: rows
+      };
+
+      res.render('orderDetails', {
+        user: req.session.user,
+        order
+      });
+    });
   }
 
 };

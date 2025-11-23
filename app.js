@@ -170,6 +170,10 @@ app.post('/updateUser/:id', checkAuthenticated, checkAdmin, UserController.updat
 // Admin: delete user
 app.get('/deleteUser/:id', checkAuthenticated, checkAdmin, UserController.deleteUser);
 
+// ORDER HISTORY (ADMIN)
+app.get('/admin/orders', checkAuthenticated, checkAdmin, OrderController.viewAllOrders);
+app.get('/admin/orders/:id', checkAuthenticated, checkAdmin, OrderController.viewOrderDetails);
+
 // ----------- CART ROUTES (NEW) -----------
 
 // ✅ Moved all cart logic into CartController
