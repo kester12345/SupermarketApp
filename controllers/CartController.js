@@ -64,6 +64,11 @@ const CartController = {
 
     console.log('Cart after removal:', req.session.cart);
     res.redirect('/cart');
+  },
+  // 🧹 Clear the entire cart
+  clearCart: (req, res) => {
+    req.session.cart = [];
+    res.redirect('/cart');
   }
 };
 

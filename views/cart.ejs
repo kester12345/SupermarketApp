@@ -65,13 +65,26 @@
 
       <div class="text-end mt-4">
         <h4><strong>Total: $<%= total.toFixed(2) %></strong></h4>
-        <a href="/shopping" class="btn btn-secondary mt-2">Continue Shopping</a>
-        <a href="/checkout" class="btn btn-success mt-2">Proceed to Checkout</a>
+
+        <a href="/clear-cart" 
+            class="btn btn-danger mt-2"
+            onclick="return confirm('Clear entire cart?')">
+            Clear Cart
+        </a>
+
+        <a href="/shopping" class="btn btn-secondary mt-2">
+          Continue Shopping
+        </a>
+
+        <a href="/checkout" class="btn btn-success mt-2">
+          Proceed to Checkout
+        </a>
       </div>
     <% } else { %>
-      <div class="alert alert-warning text-center">
-        <p>Your cart is empty.</p>
-        <a href="/shopping" class="btn btn-primary mt-2">Go Shopping</a>
+      <div class="alert alert-warning text-center mt-5 p-4 shadow-sm">
+        <h4>Your cart is empty 🛒</h4>
+        <p>Add some items to continue shopping.</p>
+        <a href="/shopping" class="btn btn-primary mt-2">Go to Shopping</a>
       </div>
     <% } %>
   </div>

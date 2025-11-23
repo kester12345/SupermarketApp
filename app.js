@@ -174,6 +174,8 @@ app.get('/deleteUser/:id', checkAuthenticated, checkAdmin, UserController.delete
 app.post('/add-to-cart/:id', checkAuthenticated, CartController.addToCart);
 app.get('/cart', checkAuthenticated, CartController.viewCart);
 app.get('/remove-from-cart/:id', checkAuthenticated, CartController.removeFromCart);
+app.get('/clear-cart', checkAuthenticated, CartController.clearCart);
+
 
 app.get('/checkout', checkAuthenticated, (req, res) => {
     const cart = req.session.cart || [];
