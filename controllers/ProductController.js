@@ -2,14 +2,23 @@
 const Product = require('../models/Product');
 
 const ProductController = {
-    // Admin view — Inventory list
-    list: (req, res) => {
+    // Admin view — Inventory list 
+    list: (req, res) => { 
+        Product.getAll((err, products) => { 
+            if (err) { 
+                console.error('Error fetching products:', err); 
+                return res.status(500).send('Error retrieving products'); 
+            } res.render('inventory', { products, user: req.session.user }); 
+        }); 
+    },
+    // User view — Shopping list
+    shopping: (req, res) => {
         Product.getAll((err, products) => {
             if (err) {
                 console.error('Error fetching products:', err);
                 return res.status(500).send('Error retrieving products');
             }
-            res.render('inventory', { products, user: req.session.user });
+            res.render('shopping', { products, user: req.session.user });
         });
     },
 
@@ -71,9 +80,7 @@ const ProductController = {
             }
             res.redirect('/inventory');
         });
-    }
+    },
 };
 
 module.exports = ProductController;
-
-

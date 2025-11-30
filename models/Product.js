@@ -9,8 +9,18 @@ const Product = {
     },
 
     getById: (id, callback) => {
-        db.query('SELECT * FROM products WHERE id = ?', [id], (err, results) => {
-            callback(err, results[0]);
+        const sql = "SELECT * FROM products WHERE id = ?";
+        db.query(sql, [id], (err, results) => {
+            if (err) return callback(err);
+
+            if (results.length === 0) return callback(null, null);
+
+            const product = results[0];
+
+            // 🔥 FIX: Convert DB stock to number
+            product.quantity = Number(product.quantity);
+
+            callback(null, product);
         });
     },
 
@@ -32,4 +42,3 @@ const Product = {
 };
 
 module.exports = Product;
-

@@ -1,0 +1,13 @@
+<h2>Enable Two-Factor Authentication</h2>
+
+<p>Scan this QR code using Microsoft Authenticator:</p>
+<img src="<%= qrCode %>" width="250">
+
+<p>Or manually enter the code:</p>
+<code><%= secret %></code>
+
+<form action="/verify-enable-2fa" method="POST">
+  <label>Enter 6-digit code</label>
+  <input type="text" name="token" required maxlength="6" class="form-control">
+  <button class="btn btn-success mt-3">Enable 2FA</button>
+</form>

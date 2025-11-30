@@ -5,13 +5,15 @@ const flash = require('connect-flash');
 const multer = require('multer');
 const app = express();
 const db = require('./db');
-
+const sha1 = require('sha1')
 
 // Import controllers
 const ProductController = require('./controllers/ProductController');
 const UserController = require('./controllers/UserController');
 const CartController = require('./controllers/CartController'); 
 const OrderController = require('./controllers/OrderController');
+const AuthController = require('./controllers/AuthController');
+const User = require('./models/User');
 
 
 // Set up multer for file uploads
@@ -75,7 +77,7 @@ app.get('/register', (req, res) => {
         formData: req.flash('formData')[0] 
     });
 });
-app.post('/register', UserController.register);
+app.post('/register', AuthController.register);
 
 app.get('/login', (req, res) => {
     res.render('login', { 
@@ -83,9 +85,11 @@ app.get('/login', (req, res) => {
         errors: req.flash('error') 
     });
 });
-app.post('/login', UserController.login);
+// ⭐ UPDATED: login handled by AuthController
+app.post('/login', AuthController.login);
 
-app.get('/logout', UserController.logout);
+// ⭐ UPDATED: logout handled by AuthController
+app.get('/logout', AuthController.logout);
 
 // ----------- PRODUCT ROUTES -----------
 
@@ -93,7 +97,7 @@ app.get('/logout', UserController.logout);
 app.get('/inventory', checkAuthenticated, checkAdmin, ProductController.list);
 
 // Shopping (User)
-app.get('/shopping', checkAuthenticated, ProductController.list);
+app.get('/shopping', checkAuthenticated, ProductController.shopping);
 
 // Product details
 app.get('/product/:id', checkAuthenticated, ProductController.getById);
@@ -174,13 +178,17 @@ app.get('/deleteUser/:id', checkAuthenticated, checkAdmin, UserController.delete
 app.get('/admin/orders', checkAuthenticated, checkAdmin, OrderController.viewAllOrders);
 app.get('/admin/orders/:id', checkAuthenticated, checkAdmin, OrderController.viewOrderDetails);
 
-// ----------- CART ROUTES (NEW) -----------
+// ----------- CART ROUTES (CORRECTED) -----------
 
-// ✅ Moved all cart logic into CartController
-app.post('/add-to-cart/:id', checkAuthenticated, CartController.addToCart);
 app.get('/cart', checkAuthenticated, CartController.viewCart);
-app.get('/remove-from-cart/:id', checkAuthenticated, CartController.removeFromCart);
-app.get('/clear-cart', checkAuthenticated, CartController.clearCart);
+
+app.post('/cart/add/:id', checkAuthenticated, CartController.addToCart);
+
+app.post('/cart/remove/:id', checkAuthenticated, CartController.removeFromCart);
+
+app.post('/cart/clear', checkAuthenticated, CartController.clearCart);
+
+app.post('/cart/updateQty/:id', checkAuthenticated, CartController.updateQuantity);
 
 
 // ===============================
@@ -232,6 +240,14 @@ app.get('/checkout', checkAuthenticated, (req, res) => {
 // Checkout confirm - POST
 app.post('/checkout', checkAuthenticated, OrderController.checkoutSelected);
 
+
+// ----------- 2FA ROUTES -----------
+
+app.get("/verify-2fa", AuthController.show2FAPrompt);
+app.post("/verify-2fa", AuthController.verifyLogin2FA);
+
+app.get("/enable-2fa", checkAuthenticated, UserController.enable2FA);
+app.post("/verify-enable-2fa", checkAuthenticated, UserController.verify2FA);
 
 // ===============================
 // SERVER
