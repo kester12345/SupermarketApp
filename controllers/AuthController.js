@@ -1,6 +1,7 @@
 // controllers/AuthController.js
 const db = require('../db');
 const sha1 = require('sha1');
+const speakeasy = require("speakeasy");   // ✅ MISSING IMPORT FIXED
 const CartItem = require('../models/CartItem');
 const User = require('../models/User');
 
@@ -53,7 +54,7 @@ const AuthController = {
             }
 
             // -----------------------------
-            // 2FA CHECK
+            // ⭐ 2FA CHECK 
             // -----------------------------
             if (user.twofa_enabled) {
                 req.session.temp_user_id = user.id;
@@ -61,11 +62,11 @@ const AuthController = {
             }
 
             // -----------------------------
-            // NORMAL LOGIN
+            // ⭐ NORMAL LOGIN
             // -----------------------------
             req.session.user = user;
 
-            // ⭐ Restore Cart from DB
+            // ⭐ Restore Cart
             CartItem.getByUserId(user.id, (err, items) => {
                 if (!err && items) {
                     req.session.cart = items.map(item => ({
@@ -93,7 +94,7 @@ const AuthController = {
     },
 
     // ============================================
-    // 2FA SUPPORT
+    // 2FA SCREEN
     // ============================================
     show2FAPrompt: (req, res) => {
         res.render("verify2fa", {
@@ -101,45 +102,56 @@ const AuthController = {
         });
     },
 
+    // ============================================
+    // VERIFY LOGIN 2FA
+    // ============================================
     verifyLogin2FA: (req, res) => {
-        const { code } = req.body;
+        const token = req.body.token;
         const userId = req.session.temp_user_id;
 
         if (!userId) {
-            req.flash("error", "Session expired. Please log in again.");
+            req.flash("error", "Session expired. Please login again.");
             return res.redirect("/login");
         }
 
-        User.verify2FACode(userId, code, (isValid) => {
-            if (!isValid) {
-                req.flash("error", "Invalid 2FA code");
+        User.getById(userId, (err, user) => {
+            if (err || !user) {
+                req.flash("error", "User not found.");
+                return res.redirect("/login");
+            }
+
+            const verified = speakeasy.totp.verify({
+                secret: user.twofa_secret,
+                encoding: "base32",
+                token: token
+            });
+
+            if (!verified) {
+                req.flash("error", "Invalid authentication code");
                 return res.redirect("/verify-2fa");
             }
 
-            // Load full user data
-            User.getById(userId, (err, user) => {
-                req.session.user = user;
-                req.session.temp_user_id = null;
+            // 2FA SUCCESS → LOGIN USER
+            req.session.user = user;
+            req.session.temp_user_id = null;
 
-                // Restore cart after 2FA login
-                CartItem.getByUserId(user.id, (err, items) => {
-                    if (!err && items) {
-                        req.session.cart = items.map(item => ({
-                            id: item.product_id,
-                            productName: item.productName,
-                            price: Number(item.price),
-                            quantity: Number(item.quantity),
-                            image: item.image,
-                            maxStock: Number(item.maxStock)
-                        }));
-                    }
+            // ⭐ Restore Cart
+            CartItem.getByUserId(user.id, (err, items) => {
+                if (!err && items) {
+                    req.session.cart = items.map(item => ({
+                        id: item.product_id,
+                        productName: item.productName,
+                        price: Number(item.price),
+                        quantity: Number(item.quantity),
+                        image: item.image,
+                        maxStock: Number(item.maxStock)
+                    }));
+                }
 
-                    req.session.save(() => res.redirect("/"));
-                });
+                req.session.save(() => res.redirect("/"));
             });
         });
-    },
-
+    }
 };
 
 module.exports = AuthController;

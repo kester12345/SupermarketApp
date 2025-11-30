@@ -51,22 +51,23 @@ const Order = {
 
     db.query(sql, [orderId], callback);
   },
-  
+
   // Get orders by user ID (for user order history)
   getOrdersByUserId: (userId, callback) => {
-    const sql = `
-        SELECT 
-            o.id AS order_id,
-            o.user_id,
-            o.total_amount,
-            o.payment_mode,
-            o.status,
-            o.created_at
-        FROM orders o
-        WHERE o.user_id = ?
-        ORDER BY o.created_at DESC
-    `;
-    db.query(sql, [userId], callback);
+      const sql = `
+          SELECT 
+              o.order_id,
+              o.user_id,
+              u.username AS customerName,
+              o.referenceId,
+              o.paymentMode,
+              o.status
+          FROM orders o
+          JOIN users u ON o.user_id = u.id
+          WHERE o.user_id = ?
+          ORDER BY o.order_id DESC
+      `;
+      db.query(sql, [userId], callback);
   }
 };
 

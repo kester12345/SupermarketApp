@@ -138,7 +138,7 @@ const OrderController = {
               return res.redirect("/");
           }
 
-          res.render("orderHistory", {
+          res.render("userOrderHistory", {
               orders,
               user: req.session.user,
               messages: req.flash("error")

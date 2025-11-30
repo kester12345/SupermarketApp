@@ -10,13 +10,39 @@
       <ul class="navbar-nav ms-auto">
 
         <% if (user && user.role === 'admin') { %>
-          <li class="nav-item"><a class="nav-link" href="/inventory">Inventory</a></li>
-        <% } else { %>
-          <li class="nav-item"><a class="nav-link" href="/shopping">Shopping 🛍️</a></li>
-          <li class="nav-item"><a class="nav-link" href="/cart">Cart 🛒</a></li>
+
+          <!-- ⭐ ADMIN NAVIGATION -->
+          <li class="nav-item">
+            <a class="nav-link" href="/inventory">Inventory</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/admin/orders">Order Management</a>
+          </li>
+
+        <% } else if (user) { %>
+
+          <!-- ⭐ USER NAVIGATION -->
+          <li class="nav-item">
+            <a class="nav-link" href="/shopping">Shopping 🛍️</a>
+          </li>
+
+          <li class="nav-item">
+            <a class="nav-link" href="/cart">Cart 🛒</a>
+          </li>
+
+          <!-- ⭐ NEW: USER ORDER HISTORY -->
+          <li class="nav-item">
+            <a class="nav-link" href="/my-orders">My Orders 📦</a>
+          </li>
+
         <% } %>
 
-        <li class="nav-item"><a class="nav-link" href="/logout">Logout</a></li>
+        <!-- Logout for both admin and user -->
+        <% if (user) { %>
+          <li class="nav-item">
+            <a class="nav-link" href="/logout">Logout</a>
+          </li>
+        <% } %>
 
       </ul>
     </div>

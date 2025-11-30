@@ -91,6 +91,9 @@ app.post('/login', AuthController.login);
 // ⭐ UPDATED: logout handled by AuthController
 app.get('/logout', AuthController.logout);
 
+// ⭐ USER — View own order history
+app.get('/my-orders', checkAuthenticated, OrderController.viewUserOrders);
+
 // ----------- PRODUCT ROUTES -----------
 
 // Inventory (Admin)
