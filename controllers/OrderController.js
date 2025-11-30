@@ -123,8 +123,28 @@ const OrderController = {
         order
       });
     });
-  }
+  },
 
+  // ===============================
+  // USER ORDER HISTORY
+  // ===============================
+  viewUserOrders: (req, res) => {
+      const userId = req.session.user.id;
+
+      Order.getOrdersByUserId(userId, (err, orders) => {
+          if (err) {
+              console.log("Error retrieving user orders:", err);
+              req.flash("error", "Unable to load your order history.");
+              return res.redirect("/");
+          }
+
+          res.render("orderHistory", {
+              orders,
+              user: req.session.user,
+              messages: req.flash("error")
+          });
+      });
+  }
 };
 
 module.exports = OrderController;
