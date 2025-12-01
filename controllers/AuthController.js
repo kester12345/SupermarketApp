@@ -1,7 +1,7 @@
 // controllers/AuthController.js
 const db = require('../db');
 const sha1 = require('sha1');
-const speakeasy = require("speakeasy");   // ✅ MISSING IMPORT FIXED
+const speakeasy = require("speakeasy");
 const CartItem = require('../models/CartItem');
 const User = require('../models/User');
 
@@ -36,7 +36,7 @@ const AuthController = {
     },
 
     // ============================================
-    // 🔐 LOGIN USER + RESTORE CART
+    // 🔐 LOGIN USER + 2FA FLOW + RESTORE CART
     // ============================================
     login: (req, res) => {
         const { email, password } = req.body;
@@ -53,20 +53,19 @@ const AuthController = {
                 return res.redirect("/login");
             }
 
-            // -----------------------------
-            // ⭐ 2FA CHECK 
-            // -----------------------------
+            // -----------------------------------
+            // ⭐ USER HAS 2FA ENABLED → GO TO OTP
+            // -----------------------------------
             if (user.twofa_enabled) {
                 req.session.temp_user_id = user.id;
-                return res.redirect("/verify-2fa");
+                return res.redirect("/login-2fa");   // FIXED
             }
 
-            // -----------------------------
-            // ⭐ NORMAL LOGIN
-            // -----------------------------
+            // -----------------------------------
+            // ⭐ NORMAL LOGIN (NO 2FA)
+            // -----------------------------------
             req.session.user = user;
 
-            // ⭐ Restore Cart
             CartItem.getByUserId(user.id, (err, items) => {
                 if (!err && items) {
                     req.session.cart = items.map(item => ({
@@ -85,7 +84,7 @@ const AuthController = {
     },
 
     // ============================================
-    // 🚪 LOGOUT USER
+    // 🚪 LOGOUT
     // ============================================
     logout: (req, res) => {
         req.session.destroy(() => {
@@ -94,16 +93,21 @@ const AuthController = {
     },
 
     // ============================================
-    // 2FA SCREEN
+    // SHOW 2FA PROMPT PAGE
     // ============================================
     show2FAPrompt: (req, res) => {
+        if (!req.session.temp_user_id) {
+            req.flash("error", "Unauthorized access.");
+            return res.redirect("/login");
+        }
+
         res.render("verify2fa", {
             messages: req.flash("error")
         });
     },
 
     // ============================================
-    // VERIFY LOGIN 2FA
+    // VERIFY LOGIN OTP
     // ============================================
     verifyLogin2FA: (req, res) => {
         const token = req.body.token;
@@ -123,19 +127,19 @@ const AuthController = {
             const verified = speakeasy.totp.verify({
                 secret: user.twofa_secret,
                 encoding: "base32",
-                token: token
+                token,
+                window: 1   // allow 1 time-step drift
             });
 
             if (!verified) {
                 req.flash("error", "Invalid authentication code");
-                return res.redirect("/verify-2fa");
+                return res.redirect("/login-2fa");  // FIXED
             }
 
-            // 2FA SUCCESS → LOGIN USER
+            // 🎉 OTP SUCCESS → COMPLETE LOGIN
             req.session.user = user;
-            req.session.temp_user_id = null;
+            delete req.session.temp_user_id;
 
-            // ⭐ Restore Cart
             CartItem.getByUserId(user.id, (err, items) => {
                 if (!err && items) {
                     req.session.cart = items.map(item => ({

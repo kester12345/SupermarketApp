@@ -38,6 +38,28 @@ const User = {
     // Admin: List all users
     getAll: (callback) => {
         db.query(`SELECT * FROM users`, callback);
+    },
+
+    Supdate2FA: (userId, secret, callback) => {
+        db.query(
+            "UPDATE users SET twoFASecret = ?, is2FAEnabled = 1 WHERE id = ?",
+            [secret, userId],
+            callback
+        );
+    },
+
+    disable2FA: (userId, callback) => {
+        db.query(
+            "UPDATE users SET twoFASecret = NULL, is2FAEnabled = 0 WHERE id = ?",
+            [userId],
+            callback
+        );
+    },
+
+    findById: (id, callback) => {
+        db.query("SELECT * FROM users WHERE id = ?", [id], (err, rows) => {
+            callback(err, rows[0]);
+        });
     }
 };
 

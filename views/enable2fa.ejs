@@ -6,7 +6,7 @@
 <p>Or manually enter the code:</p>
 <code><%= secret %></code>
 
-<form action="/verify-enable-2fa" method="POST">
+<form action="/enable-2fa/verify" method="POST">
   <label>Enter 6-digit code</label>
   <input type="text" name="token" required maxlength="6" class="form-control">
   <button class="btn btn-success mt-3">Enable 2FA</button>

@@ -13,7 +13,7 @@
     <div class="alert alert-danger"><%= messages[0] %></div>
   <% } %>
 
-  <form action="/verify-2fa" method="POST">
+  <form action="/login-2fa" method="POST">
     <label class="form-label">Enter 6-digit code</label>
     <input type="text" name="token" maxlength="6" class="form-control" required>
     <button class="btn btn-primary w-100 mt-3">Verify</button>

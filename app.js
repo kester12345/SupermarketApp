@@ -12,6 +12,7 @@ const ProductController = require('./controllers/ProductController');
 const UserController = require('./controllers/UserController');
 const CartController = require('./controllers/CartController');
 const AuthController = require('./controllers/AuthController');
+const OrderController = require('./controllers/OrderController');
 
 // Route files
 const orderRoutes = require("./routes/OrderRoutes");
@@ -188,11 +189,22 @@ app.get('/checkout', checkAuthenticated, (req, res) => {
     });
 });
 
-// 2FA
-app.get("/verify-2fa", AuthController.show2FAPrompt);
-app.post("/verify-2fa", AuthController.verifyLogin2FA);
-app.get("/enable-2fa", checkAuthenticated, UserController.enable2FA);
-app.post("/verify-enable-2fa", checkAuthenticated, UserController.verify2FA);
+// ⭐ NEW — POST CHECKOUT
+app.post('/checkout', checkAuthenticated, OrderController.checkoutSelected);
+
+// ======================
+// USER PROFILE + 2FA SETUP
+// ======================
+app.get('/profile', checkAuthenticated, UserController.profile);
+app.get('/enable-2fa', checkAuthenticated, UserController.enable2FA);
+app.post('/enable-2fa/verify', checkAuthenticated, UserController.verify2FA);
+app.post('/disable-2fa', checkAuthenticated, UserController.disable2FA);
+
+// ======================
+// LOGIN 2FA
+// ======================
+app.get('/login-2fa', AuthController.show2FAPrompt);
+app.post('/login-2fa', AuthController.verifyLogin2FA);
 
 // ======================
 // SERVER

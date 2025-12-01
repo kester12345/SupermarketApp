@@ -200,7 +200,33 @@ const OrderController = {
               });
           });
       });
-  }
+  },
+adminOrderHistory: (req, res) => {
+    const sql = `
+        SELECT 
+            o.order_id,
+            o.user_id,
+            u.username,
+            o.paymentMode,
+            o.status,
+            o.referenceId
+        FROM orders o
+        JOIN users u ON o.user_id = u.id
+        ORDER BY o.order_id DESC
+    `;
+
+    db.query(sql, (err, orders) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).send("Error retrieving orders");
+        }
+
+        res.render("orderHistory", {
+            orders,
+            user: req.session.user
+        });
+    });
+}
 };
 
 module.exports = OrderController;
