@@ -144,6 +144,62 @@ const OrderController = {
               messages: req.flash("error")
           });
       });
+  },
+  // ================================
+  // USER — VIEW ORDER DETAILS
+  // ================================
+  viewUserOrderDetails: (req, res) => {
+      const userId = req.session.user.id;
+      const orderId = req.params.orderId;
+
+      const orderSql = `
+          SELECT 
+              order_id, 
+              user_id, 
+              paymentMode, 
+              referenceId, 
+              status
+          FROM orders
+          WHERE order_id = ? AND user_id = ?
+      `;
+
+      const itemsSql = `
+          SELECT oi.product_id, oi.quantity, oi.unit_price,
+                p.productName, p.image
+          FROM order_items oi
+          JOIN products p ON oi.product_id = p.id
+          WHERE oi.order_id = ?
+      `;
+
+      db.query(orderSql, [orderId, userId], (err, orderRows) => {
+          if (err) {
+              console.log("Error loading order:", err);
+              req.flash("error", "Could not load order.");
+              return res.redirect("/my-orders");
+          }
+
+          if (orderRows.length === 0) {
+              req.flash("error", "Order not found.");
+              return res.redirect("/my-orders");
+          }
+
+          const order = orderRows[0];
+
+          db.query(itemsSql, [orderId], (err, itemRows) => {
+              if (err) {
+                  console.log("Error loading items:", err);
+                  req.flash("error", "Could not load order items.");
+                  return res.redirect("/my-orders");
+              }
+
+              order.items = itemRows;
+
+              res.render("userOrderDetails", {
+                  user: req.session.user,
+                  order
+              });
+          });
+      });
   }
 };
 
