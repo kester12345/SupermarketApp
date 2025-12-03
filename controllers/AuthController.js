@@ -23,16 +23,32 @@ const AuthController = {
 
         const hashedPassword = sha1(password);
 
-        User.create(username, email, hashedPassword, address, contact, "user", (err) => {
-            if (err) {
-                req.flash("error", "Email already exists.");
-                req.flash("formData", formData);
-                return res.redirect("/register");
-            }
+       User.register(
+            {
+                username,
+                email,
+                password: hashedPassword,
+                address,
+                contact,
+                role: "user"
+            },
+            (err) => {
+                if (err?.duplicate) {
+                    req.flash("error", "Email already exists.");
+                    req.flash("formData", formData);
+                    return res.redirect("/register");
+                }
 
-            req.flash("success", "Registration successful! Please log in.");
-            return res.redirect("/login");
-        });
+                if (err) {
+                    req.flash("error", "Registration failed.");
+                    req.flash("formData", formData);
+                    return res.redirect("/register");
+                }
+
+                req.flash("success", "Registration successful! Please log in.");
+                return res.redirect("/login");
+            }
+        );
     },
 
     // ============================================
@@ -58,27 +74,34 @@ const AuthController = {
             // -----------------------------------
             if (user.twofa_enabled) {
                 req.session.temp_user_id = user.id;
-                return res.redirect("/login-2fa");   // FIXED
+                return res.redirect("/login-2fa");
             }
 
             // -----------------------------------
             // ⭐ NORMAL LOGIN (NO 2FA)
             // -----------------------------------
-            req.session.user = user;
-
-            CartItem.getByUserId(user.id, (err, items) => {
-                if (!err && items) {
-                    req.session.cart = items.map(item => ({
-                        id: item.product_id,
-                        productName: item.productName,
-                        price: Number(item.price),
-                        quantity: Number(item.quantity),
-                        image: item.image,
-                        maxStock: Number(item.maxStock)
-                    }));
+            req.session.regenerate(err => {
+                if (err) {
+                    req.flash("error", "Session error. Try again.");
+                    return res.redirect("/login");
                 }
 
-                req.session.save(() => res.redirect("/"));
+                req.session.user = user;
+
+                CartItem.getByUserId(user.id, (err, items) => {
+                    if (!err && items) {
+                        req.session.cart = items.map(item => ({
+                            id: item.product_id,
+                            productName: item.productName,
+                            price: Number(item.price),
+                            quantity: Number(item.quantity),
+                            image: item.image,
+                            maxStock: Number(item.maxStock)
+                        }));
+                    }
+
+                    req.session.save(() => res.redirect("/"));
+                });
             });
         });
     },
@@ -88,6 +111,7 @@ const AuthController = {
     // ============================================
     logout: (req, res) => {
         req.session.destroy(() => {
+            res.clearCookie("connect.sid");   // Prevents old session reuse
             res.redirect("/login");
         });
     },
@@ -128,31 +152,40 @@ const AuthController = {
                 secret: user.twofa_secret,
                 encoding: "base32",
                 token,
-                window: 1   // allow 1 time-step drift
+                window: 1
             });
 
             if (!verified) {
                 req.flash("error", "Invalid authentication code");
-                return res.redirect("/login-2fa");  // FIXED
+                return res.redirect("/login-2fa");
             }
 
             // 🎉 OTP SUCCESS → COMPLETE LOGIN
-            req.session.user = user;
-            delete req.session.temp_user_id;
-
-            CartItem.getByUserId(user.id, (err, items) => {
-                if (!err && items) {
-                    req.session.cart = items.map(item => ({
-                        id: item.product_id,
-                        productName: item.productName,
-                        price: Number(item.price),
-                        quantity: Number(item.quantity),
-                        image: item.image,
-                        maxStock: Number(item.maxStock)
-                    }));
+            req.session.regenerate(err => {
+                if (err) {
+                    req.flash("error", "Session error.");
+                    return res.redirect("/login");
                 }
 
-                req.session.save(() => res.redirect("/"));
+                req.session.user = user;
+
+                CartItem.getByUserId(user.id, (err, items) => {
+                    if (!err && items) {
+                        req.session.cart = items.map(item => ({
+                            id: item.product_id,
+                            productName: item.productName,
+                            price: Number(item.price),
+                            quantity: Number(item.quantity),
+                            image: item.image,
+                            maxStock: Number(item.maxStock)
+                        }));
+                    }
+
+                    // Clear temp user ID safely
+                    delete req.session.temp_user_id;
+
+                    req.session.save(() => res.redirect("/"));
+                });
             });
         });
     }

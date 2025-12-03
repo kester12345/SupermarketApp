@@ -11,14 +11,47 @@ const ProductController = {
             } res.render('inventory', { products, user: req.session.user }); 
         }); 
     },
-    // User view — Shopping list
+    // Shopping view — Product catalog with search, filter, sort
     shopping: (req, res) => {
+        let { search, filter, category, sort } = req.query;
+
         Product.getAll((err, products) => {
-            if (err) {
-                console.error('Error fetching products:', err);
-                return res.status(500).send('Error retrieving products');
+            if (err) return res.status(500).send("Error retrieving products");
+
+            // Search
+            if (search) {
+                products = products.filter(p =>
+                    p.productName.toLowerCase().includes(search.toLowerCase())
+                );
             }
-            res.render('shopping', { products, user: req.session.user });
+
+            // Stock filter
+            if (filter === 'in') {
+                products = products.filter(p => p.quantity > 0);
+            } else if (filter === 'out') {
+                products = products.filter(p => p.quantity === 0);
+            }
+
+            // Category filter
+            if (category) {
+                products = products.filter(p => p.category === category);
+            }
+
+            // Sorting
+            if (sort === 'low') {
+                products.sort((a, b) => a.price - b.price);
+            } else if (sort === 'high') {
+                products.sort((a, b) => b.price - a.price);
+            }
+
+            res.render('shopping', { 
+                products, 
+                user: req.session.user,
+                search,
+                filter,
+                category,
+                sort
+            });
         });
     },
 
@@ -41,8 +74,10 @@ const ProductController = {
             productName: req.body.name,
             quantity: req.body.quantity,
             price: req.body.price,
+            category: req.body.category,
             image: req.file ? req.file.filename : null
         };
+
         Product.add(newProduct, (err) => {
             if (err) {
                 console.error('Error adding product:', err);
@@ -59,8 +94,10 @@ const ProductController = {
             productName: req.body.name,
             quantity: req.body.quantity,
             price: req.body.price,
+            category: req.body.category,
             image: req.file ? req.file.filename : req.body.currentImage
         };
+
         Product.update(id, updatedProduct, (err) => {
             if (err) {
                 console.error('Error updating product:', err);

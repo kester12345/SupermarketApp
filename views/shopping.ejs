@@ -8,21 +8,24 @@
   <title>Supermarket App</title>
 
   <style>
+    .product-card {
+      transition: all 0.2s ease-in-out;
+      border-radius: 12px;
+    }
+    .product-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 18px rgba(0,0,0,0.15);
+    }
     .product-img {
-      width: 70px;
-      height: 70px;
+      width: 100%;
+      height: 160px;
       object-fit: contain;
+    }
+    .badge-stock {
+      font-size: 12px;
     }
     .qty-input {
       width: 80px;
-    }
-    .table th {
-      vertical-align: middle !important;
-      font-size: 15px;
-    }
-    .table td {
-      vertical-align: middle !important;
-      font-size: 15px;
     }
   </style>
 
@@ -40,66 +43,137 @@
     <p class="mb-3">Welcome, <strong><%= user.username %></strong> (<%= user.role %>)</p>
 
     <div class="text-center mb-4">
-      <h2 class="fw-bold">Products from Supermarket</h2>
+      <h2 class="fw-bold">🛒 Supermarket Products</h2>
+      <p class="text-muted">Browse, search, filter or sort products easily.</p>
     </div>
 
-    <table class="table table-hover table-bordered text-center align-middle shadow-sm">
-      <thead class="table-dark">
-        <tr>
-          <th style="width: 170px;">Product Name</th>
-          <th style="width: 140px;">Image</th>
-          <th style="width: 80px;">Stock</th>
-          <th style="width: 80px;">Price</th>
-          <th style="width: 120px;">Quantity</th>
-          <th style="width: 150px;">Add to Cart</th>
-        </tr>
-      </thead>
+    <!-- Search & Filter Section -->
+    <form method="GET" action="/shopping" class="row g-3 mb-5 bg-light p-3 rounded shadow-sm">
 
-      <tbody>
-        <% products.forEach(product => { %>
-          <tr>
+      <!-- Search -->
+      <div class="col-md-4">
+        <label class="form-label fw-semibold">Search Products</label>
+        <input 
+          type="text" 
+          name="search" 
+          class="form-control"
+          placeholder="Search by name..."
+          value="<%= search || '' %>"
+        >
+      </div>
 
-            <!-- Product name -->
-            <td>
-              <a href="/product/<%= product.id %>" class="text-decoration-none fw-semibold">
-                <%= product.productName %>
-              </a>
-            </td>
+      <!-- Stock Filter -->
+      <div class="col-md-2">
+        <label class="form-label fw-semibold">Stock</label>
+        <select name="filter" class="form-select">
+          <option value="">All</option>
+          <option value="in" <%= filter === 'in' ? 'selected' : '' %>>In Stock</option>
+          <option value="out" <%= filter === 'out' ? 'selected' : '' %>>Out of Stock</option>
+        </select>
+      </div>
 
-            <!-- Product image -->
-            <td>
-              <img src="/images/<%= product.image %>" class="product-img img-thumbnail">
-            </td>
+      <!-- Category Filter -->
+      <div class="col-md-3">
+        <label class="form-label fw-semibold">Category</label>
+        <select name="category" class="form-select">
+          <option value="">All Categories</option>
+          <option value="Fruits"      <%= category === 'Fruits' ? 'selected' : '' %>>Fruits</option>
+          <option value="Vegetables"  <%= category === 'Vegetables' ? 'selected' : '' %>>Vegetables</option>
+          <option value="Bakery"      <%= category === 'Bakery' ? 'selected' : '' %>>Bakery</option>
+          <option value="Dairy"       <%= category === 'Dairy' ? 'selected' : '' %>>Dairy</option>
+        </select>
+      </div>
 
-            <!-- Stock -->
-            <td><%= product.quantity %></td>
+      <!-- Sort by Price -->
+      <div class="col-md-3">
+        <label class="form-label fw-semibold">Sort by Price</label>
+        <select name="sort" class="form-select">
+          <option value="">None</option>
+          <option value="low"  <%= sort === 'low' ? 'selected' : '' %>>Low → High</option>
+          <option value="high" <%= sort === 'high' ? 'selected' : '' %>>High → Low</option>
+        </select>
+      </div>
 
-            <!-- Price -->
-            <td>$<%= product.price.toFixed(2) %></td>
+      <!-- Buttons -->
+      <div class="col-md-2 d-flex align-items-end">
+        <button class="btn btn-dark w-100">Apply</button>
+      </div>
 
-            <!-- Quantity + Add to Cart -->
-            <td>
-              <form action="/cart/add/<%= product.id %>" method="POST" class="d-flex justify-content-center">
+      <div class="col-md-2 d-flex align-items-end">
+        <a href="/shopping" class="btn btn-secondary w-100">Reset</a>
+      </div>
+
+    </form>
+    <!-- END Search -->
+
+    <!-- Product Cards -->
+    <div class="row g-4">
+
+      <% products.forEach(product => { %>
+        <div class="col-md-3">
+
+          <div class="card product-card shadow-sm border-0">
+
+            <!-- Product Image -->
+            <a href="/product/<%= product.id %>">
+              <img src="/images/<%= product.image %>" class="product-img p-3" />
+            </a>
+
+            <div class="card-body text-center pt-0">
+
+              <!-- Product Name -->
+              <h6 class="fw-bold mt-2">
+                <a href="/product/<%= product.id %>" class="text-decoration-none">
+                  <%= product.productName %>
+                </a>
+              </h6>
+
+              <!-- Stock Badge + Quantity -->
+              <% if (product.quantity > 0) { %>
+                <span class="badge bg-success badge-stock">In Stock</span>
+                <p class="text-muted mt-1 mb-1" style="font-size: 13px;">
+                  Stock: <strong><%= product.quantity %></strong> units
+                </p>
+              <% } else { %>
+                <span class="badge bg-danger badge-stock">Out of Stock</span>
+                <p class="text-muted mt-1 mb-1" style="font-size: 13px;">
+                  Stock: <strong>0</strong> units
+                </p>
+              <% } %>
+
+              <!-- Price -->
+              <p class="mt-2 mb-1 fw-semibold">$<%= product.price.toFixed(2) %></p>
+
+              <!-- Add to Cart -->
+              <form action="/cart/add/<%= product.id %>" method="POST" class="d-flex justify-content-center mt-2">
+
                 <input 
                   type="number"
-                  class="form-control text-center qty-input"
+                  class="form-control text-center qty-input me-2"
                   name="quantity"
                   value="1"
                   min="1"
                   max="<%= product.quantity %>"
+                  <%= product.quantity === 0 ? "disabled" : "" %>
                 >
-            </td>
 
-            <td>
-                <button type="submit" class="btn btn-primary btn-sm px-3">
-                  Add to Cart
+                <button 
+                  type="submit" 
+                  class="btn btn-primary btn-sm px-3"
+                  <%= product.quantity === 0 ? "disabled" : "" %>
+                >
+                  Add
                 </button>
+
               </form>
-            </td>
-          </tr>
-        <% }) %>
-      </tbody>
-    </table>
+
+            </div>
+
+          </div>
+        </div>
+      <% }) %>
+
+    </div>
 
   </div>
 

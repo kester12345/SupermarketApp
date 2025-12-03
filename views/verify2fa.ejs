@@ -1,23 +1,97 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>2FA Verification</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <meta charset="UTF-8">
+    <title>Verify 2FA</title>
+
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+
+    <style>
+        body {
+            background: #eef2f7;
+            font-family: "Segoe UI", sans-serif;
+        }
+
+        .verify-box {
+            max-width: 450px;
+            margin: 80px auto;
+            background: #ffffff;
+            padding: 40px 35px;
+            border-radius: 20px;
+            box-shadow: 0 8px 22px rgba(0,0,0,0.08);
+            animation: fadeIn .5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .verify-title {
+            font-weight: 700;
+            font-size: 24px;
+            color: #1f1f1f;
+        }
+
+        .otp-input {
+            font-size: 22px;
+            text-align: center;
+            letter-spacing: 8px;
+            padding: 12px;
+            border-radius: 10px;
+        }
+    </style>
 </head>
 <body>
 
-<div class="container mt-5" style="max-width: 450px;">
-  <h3 class="mb-4 text-center">🔐 Two-Factor Authentication</h3>
+<div class="verify-box">
 
-  <% if (messages && messages.length > 0) { %>
-    <div class="alert alert-danger"><%= messages[0] %></div>
-  <% } %>
+    <!-- Icon -->
+    <div class="text-center mb-3">
+        <i class="bi bi-shield-lock-fill text-primary" style="font-size: 50px;"></i>
+    </div>
 
-  <form action="/login-2fa" method="POST">
-    <label class="form-label">Enter 6-digit code</label>
-    <input type="text" name="token" maxlength="6" class="form-control" required>
-    <button class="btn btn-primary w-100 mt-3">Verify</button>
-  </form>
+    <!-- Header Text -->
+    <h3 class="text-center verify-title mb-3">Two-Factor Authentication</h3>
+    <p class="text-center text-muted mb-4">Enter the 6-digit code from your Authenticator App</p>
+
+    <!-- Error Messages -->
+    <% if (messages && messages.length > 0) { %>
+        <div class="alert alert-danger d-flex align-items-center">
+            <i class="bi bi-exclamation-circle-fill me-2"></i>
+            <%= messages[0] %>
+        </div>
+    <% } %>
+
+    <!-- OTP Form -->
+    <form action="/login-2fa" method="POST">
+        <label class="form-label fw-semibold">Authentication Code</label>
+        <input 
+            type="text" 
+            name="token" 
+            maxlength="6" 
+            class="form-control otp-input" 
+            placeholder="123456"
+            required
+        >
+
+        <button class="btn btn-primary w-100 mt-4">
+            <i class="bi bi-check-circle-fill me-2"></i> Verify Code
+        </button>
+    </form>
+
+    <!-- Back to Login -->
+    <div class="text-center mt-3">
+        <a href="/login" class="text-decoration-none">
+            <i class="bi bi-arrow-left"></i> Back to Login
+        </a>
+    </div>
+
 </div>
 
 </body>

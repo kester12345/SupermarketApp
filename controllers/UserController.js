@@ -2,6 +2,7 @@
 const db = require('../db');
 const speakeasy = require("speakeasy");
 const qrcode = require("qrcode");
+const crypto = require("crypto");
 const User = require("../models/User");
 
 const UserController = {
@@ -25,7 +26,8 @@ const UserController = {
     // ENABLE 2FA — STEP 1: GENERATE QR
     // ============================
     enable2FA: async (req, res) => {
-        // If user already started setup, DO NOT regenerate a new secret
+
+        // Don't regenerate secret if already created
         if (!req.session.setup_2fa_secret) {
             const secret = speakeasy.generateSecret({
                 length: 20,
@@ -33,12 +35,8 @@ const UserController = {
                 issuer: "SupermarketApp"
             });
 
-            console.log("NEW SECRET GENERATED:", secret.base32);
-
             req.session.setup_2fa_secret = secret.base32;
             req.session.setup_2fa_otpauth = secret.otpauth_url;
-        } else {
-            console.log("REUSING EXISTING SECRET:", req.session.setup_2fa_secret);
         }
 
         const qrCode = await qrcode.toDataURL(req.session.setup_2fa_otpauth);
@@ -50,24 +48,14 @@ const UserController = {
             messages: req.flash("error"),
             success: req.flash("success")
         });
-        },
+    },
 
     // ============================
-    // ENABLE 2FA — STEP 2: VERIFY OTP & SAVE
+    // ENABLE 2FA — STEP 2: VERIFY OTP
     // ============================
     verify2FA: (req, res) => {
         const token = req.body.token;
         const secret = req.session.setup_2fa_secret;
-
-        console.log("SECRET USED TO VERIFY:", secret);
-        console.log("TOKEN ENTERED:", token);
-
-        // 🔥 DEBUG: Show what the correct OTP SHOULD BE
-        const expected = speakeasy.totp({
-            secret,
-            encoding: "base32"
-        });
-        console.log("EXPECTED OTP:", expected);
 
         // Verify OTP
         const verified = speakeasy.totp.verify({
@@ -78,14 +66,11 @@ const UserController = {
         });
 
         if (!verified) {
-            console.log("❌ OTP FAILED");
-            req.flash("error", "Invalid authentication code. Please try again.");
+            req.flash("error", "Invalid authentication code. Try again.");
             return res.redirect("/enable-2fa");
         }
 
-        console.log("✅ OTP VERIFIED SUCCESSFULLY");
-
-        // Save to DB
+        // Save secret to DB
         db.query(
             "UPDATE users SET twofa_enabled = 1, twofa_secret = ? WHERE id = ?",
             [secret, req.session.user.id],
@@ -96,7 +81,7 @@ const UserController = {
 
         delete req.session.setup_2fa_secret;
 
-        req.flash("success", "Two-factor authentication has been enabled.");
+        req.flash("success", "Two-factor authentication enabled.");
         res.redirect("/profile");
     },
 
@@ -106,10 +91,7 @@ const UserController = {
     disable2FA: (req, res) => {
         db.query(
             "UPDATE users SET twofa_enabled = 0, twofa_secret = NULL WHERE id = ?",
-            [req.session.user.id],
-            (err) => {
-                if (err) console.error(err);
-            }
+            [req.session.user.id]
         );
 
         req.flash("success", "Two-factor authentication has been disabled.");
@@ -120,13 +102,8 @@ const UserController = {
     // ADMIN: LIST USERS
     // ============================
     listUser: (req, res) => {
-        const sql = "SELECT * FROM users";
-
-        db.query(sql, (err, users) => {
-            if (err) {
-                console.error("Error fetching users:", err);
-                return res.status(500).send("Error retrieving users");
-            }
+        db.query("SELECT * FROM users", (err, users) => {
+            if (err) return res.status(500).send("Error retrieving users");
 
             res.render("listUser", {
                 users,
@@ -138,54 +115,49 @@ const UserController = {
     },
 
     // ============================
-    // ADMIN: ADD NEW USER
+    // ADMIN: ADD USER
     // ============================
     addUser: (req, res) => {
         const { username, email, password, address, contact, role } = req.body;
 
         if (!username || !email || !password || !address || !contact || !role) {
             req.flash("error", "All fields are required.");
-            req.flash("formData", req.body);
             return res.redirect("/addUser");
         }
 
         if (password.length < 6) {
-            req.flash("error", "Password must be at least 6 characters long.");
-            req.flash("formData", req.body);
+            req.flash("error", "Password must be at least 6 characters.");
             return res.redirect("/addUser");
         }
 
-        const sql = `
-            INSERT INTO users (username, email, password, address, contact, role)
-            VALUES (?, ?, SHA1(?), ?, ?, ?)
-        `;
+        db.query(
+            `INSERT INTO users (username, email, password, address, contact, role)
+            VALUES (?, ?, SHA1(?), ?, ?, ?)`,
+            [username, email, password, address, contact, role],
+            (err) => {
 
-        db.query(sql, [username, email, password, address, contact, role], (err) => {
-            if (err) {
-                console.error("Error adding user:", err);
-                req.flash("error", "Error adding user.");
-                return res.redirect("/addUser");
+                if (err && err.code === "ER_DUP_ENTRY") {
+                    req.flash("error", "This email already exists. Please use a different email.");
+                    return res.redirect("/addUser");
+                }
+
+                if (err) {
+                    req.flash("error", "Error adding user.");
+                    return res.redirect("/addUser");
+                }
+
+                req.flash("success", "User added successfully.");
+                res.redirect("/listUser");
             }
-
-            req.flash("success", "User added successfully.");
-            res.redirect("/listUser");
-        });
+        );
     },
 
     // ============================
-    // ADMIN: GET USER FOR EDIT
+    // ADMIN: FETCH USER FOR EDIT
     // ============================
     getUserById: (req, res) => {
-        const id = req.params.id;
-
-        db.query("SELECT * FROM users WHERE id = ?", [id], (err, results) => {
-            if (err) {
-                console.error("Error fetching user:", err);
-                req.flash("error", "Error retrieving user");
-                return res.redirect("/listUser");
-            }
-
-            if (results.length === 0) {
+        db.query("SELECT * FROM users WHERE id = ?", [req.params.id], (err, results) => {
+            if (err || results.length === 0) {
                 req.flash("error", "User not found");
                 return res.redirect("/listUser");
             }
@@ -207,27 +179,33 @@ const UserController = {
         const { username, email, address, contact, role, password } = req.body;
 
         if (!username || !email || !address || !contact || !role) {
-            req.flash("error", "All fields except password are required.");
+            req.flash("error", "All fields (except password) are required.");
             return res.redirect(`/updateUser/${id}`);
         }
 
-        const query = password.trim() !== ""
+        const query = password.trim()
             ? `UPDATE users SET username=?, email=?, password=SHA1(?), address=?, contact=?, role=? WHERE id=?`
             : `UPDATE users SET username=?, email=?, address=?, contact=?, role=? WHERE id=?`;
 
-        const params = password.trim() !== ""
+        const params = password.trim()
             ? [username, email, password, address, contact, role, id]
             : [username, email, address, contact, role, id];
 
         db.query(query, params, (err) => {
+
+            if (err && err.code === "ER_DUP_ENTRY") {
+                req.flash("error", "Email already exists. Choose another email.");
+                return res.redirect(`/updateUser/${id}`);
+            }
+
             if (err) {
-                console.error("Error updating user:", err);
                 req.flash("error", "Error updating user.");
                 return res.redirect(`/updateUser/${id}`);
             }
 
             req.flash("success", "User updated successfully.");
             res.redirect("/listUser");
+
         });
     },
 
@@ -235,17 +213,84 @@ const UserController = {
     // ADMIN: DELETE USER
     // ============================
     deleteUser: (req, res) => {
-        const id = req.params.id;
-
-        db.query("DELETE FROM users WHERE id = ?", [id], (err) => {
+        db.query("DELETE FROM users WHERE id = ?", [req.params.id], (err) => {
             if (err) {
-                console.error("Error deleting user:", err);
                 req.flash("error", "Error deleting user.");
                 return res.redirect("/listUser");
             }
 
             req.flash("success", "User deleted.");
             res.redirect("/listUser");
+        });
+    },
+
+    // ============================
+    // UPDATE EMAIL
+    // ============================
+    updateEmail: (req, res) => {
+        const { newEmail } = req.body;
+
+        if (!newEmail.trim()) {
+            req.flash("error", "Email cannot be empty.");
+            return res.redirect("/profile");
+        }
+
+        db.query("UPDATE users SET email = ? WHERE id = ?", [newEmail, req.session.user.id], (err) => {
+            if (err) {
+                req.flash("error", "Failed to update email.");
+                return res.redirect("/profile");
+            }
+
+            req.session.user.email = newEmail;
+
+            req.flash("success", "Email updated successfully.");
+            res.redirect("/profile");
+        });
+    },
+
+    // ============================
+    // UPDATE PASSWORD — VERIFY OLD
+    // ============================
+    updatePassword: (req, res) => {
+        const { oldPassword, newPassword, confirmPassword } = req.body;
+
+        if (!oldPassword || !newPassword || !confirmPassword) {
+            req.flash("error", "All password fields are required.");
+            return res.redirect("/profile");
+        }
+
+        if (newPassword !== confirmPassword) {
+            req.flash("error", "New passwords do not match.");
+            return res.redirect("/profile");
+        }
+
+        // 1. Verify old password
+        db.query("SELECT password FROM users WHERE id = ?", [req.session.user.id], (err, results) => {
+            if (err || results.length === 0) {
+                req.flash("error", "Error verifying old password.");
+                return res.redirect("/profile");
+            }
+
+            const storedHash = results[0].password;
+            const oldHash = crypto.createHash("sha1").update(oldPassword).digest("hex");
+
+            if (oldHash !== storedHash) {
+                req.flash("error", "Old password is incorrect.");
+                return res.redirect("/profile");
+            }
+
+            // 2. Update to new password
+            const newHash = crypto.createHash("sha1").update(newPassword).digest("hex");
+
+            db.query("UPDATE users SET password = ? WHERE id = ?", [newHash, req.session.user.id], (err) => {
+                if (err) {
+                    req.flash("error", "Failed to update password.");
+                    return res.redirect("/profile");
+                }
+
+                req.flash("success", "Password updated successfully.");
+                res.redirect("/profile");
+            });
         });
     }
 };

@@ -47,17 +47,8 @@ app.use(flash());
 // ======================
 // Middleware
 // ======================
-const checkAuthenticated = (req, res, next) => {
-    if (req.session.user) return next();
-    req.flash('error', 'Please log in to view this resource');
-    res.redirect('/login');
-};
+const { checkAuthenticated, checkAdmin } = require('./middleware/middleware');
 
-const checkAdmin = (req, res, next) => {
-    if (req.session.user && req.session.user.role === 'admin') return next();
-    req.flash('error', 'Access denied');
-    res.redirect('/shopping');
-};
 
 // ======================
 // ROUTES
@@ -205,6 +196,52 @@ app.post('/disable-2fa', checkAuthenticated, UserController.disable2FA);
 // ======================
 app.get('/login-2fa', AuthController.show2FAPrompt);
 app.post('/login-2fa', AuthController.verifyLogin2FA);
+
+// Update Email
+app.post("/update-email", checkAuthenticated, UserController.updateEmail);
+
+// Update Password
+app.post("/update-password", checkAuthenticated, UserController.updatePassword);
+
+
+// SHOW ALL PRODUCTS (WITH SEARCH + FILTER)
+app.get('/shopping', checkAuthenticated, (req, res) => {
+
+  const search = req.query.search || "";
+  const filter = req.query.filter || "";
+
+  Product.getAll((err, products) => {
+    if (err) {
+      console.error("Error fetching products:", err);
+      return res.status(500).send("Error loading products");
+    }
+
+    let result = products;
+
+    // 🔍 SEARCH BY NAME
+    if (search) {
+      result = result.filter(p =>
+        p.productName.toLowerCase().includes(search.toLowerCase())
+      );
+    }
+
+    // 🔎 FILTER BY STOCK
+    if (filter === "in") {
+      result = result.filter(p => p.quantity > 0);
+    }
+    if (filter === "out") {
+      result = result.filter(p => p.quantity === 0);
+    }
+
+    return res.render("shopping", {
+      user: req.user,
+      products: result,
+      search,
+      filter
+    });
+  });
+
+});
 
 // ======================
 // SERVER

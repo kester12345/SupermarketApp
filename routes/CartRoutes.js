@@ -18,4 +18,6 @@ router.post('/cart/clear', CartController.clearCart);
 // Update quantity (+ / -)
 router.post('/cart/updateQty/:id', CartController.updateQuantity);
 
+router.get("/my-orders/:orderId", OrderController.viewUserOrderDetails);
+
 module.exports = router;

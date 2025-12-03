@@ -10,7 +10,12 @@ const User = {
             INSERT INTO users (username, email, password, address, contact, role)
             VALUES (?, ?, SHA1(?), ?, ?, ?)
         `;
-        db.query(sql, [username, email, password, address, contact, role], callback);
+        db.query(sql, [username, email, password, address, contact, role], (err, result) => {
+            if (err && err.code === "ER_DUP_ENTRY") {
+                return callback({ duplicate: true });
+            }
+            callback(err, result);
+        });
     },
 
     // Required for login (email only)
