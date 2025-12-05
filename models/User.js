@@ -8,7 +8,7 @@ const User = {
         const { username, email, password, address, contact, role } = data;
         const sql = `
             INSERT INTO users (username, email, password, address, contact, role)
-            VALUES (?, ?, SHA1(?), ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?)
         `;
         db.query(sql, [username, email, password, address, contact, role], (err, result) => {
             if (err && err.code === "ER_DUP_ENTRY") {

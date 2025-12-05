@@ -204,44 +204,6 @@ app.post("/update-email", checkAuthenticated, UserController.updateEmail);
 app.post("/update-password", checkAuthenticated, UserController.updatePassword);
 
 
-// SHOW ALL PRODUCTS (WITH SEARCH + FILTER)
-app.get('/shopping', checkAuthenticated, (req, res) => {
-
-  const search = req.query.search || "";
-  const filter = req.query.filter || "";
-
-  Product.getAll((err, products) => {
-    if (err) {
-      console.error("Error fetching products:", err);
-      return res.status(500).send("Error loading products");
-    }
-
-    let result = products;
-
-    // 🔍 SEARCH BY NAME
-    if (search) {
-      result = result.filter(p =>
-        p.productName.toLowerCase().includes(search.toLowerCase())
-      );
-    }
-
-    // 🔎 FILTER BY STOCK
-    if (filter === "in") {
-      result = result.filter(p => p.quantity > 0);
-    }
-    if (filter === "out") {
-      result = result.filter(p => p.quantity === 0);
-    }
-
-    return res.render("shopping", {
-      user: req.user,
-      products: result,
-      search,
-      filter
-    });
-  });
-
-});
 
 // ======================
 // SERVER

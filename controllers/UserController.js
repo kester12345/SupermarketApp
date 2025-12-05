@@ -214,6 +214,12 @@ const UserController = {
     // ============================
     deleteUser: (req, res) => {
         db.query("DELETE FROM users WHERE id = ?", [req.params.id], (err) => {
+
+            if (err && err.code === "ER_ROW_IS_REFERENCED_2") {
+                req.flash("error", "Cannot delete user — user has existing orders.");
+                return res.redirect("/listUser");
+            }
+
             if (err) {
                 req.flash("error", "Error deleting user.");
                 return res.redirect("/listUser");

@@ -16,6 +16,14 @@
 
   <div class="container mt-5">
     <h1>User Management</h1>
+    <% if (messages && messages.length) { %>
+      <div class="alert alert-danger"><%= messages %></div>
+    <% } %>
+
+    <% if (success && success.length) { %>
+      <div class="alert alert-success"><%= success %></div>
+    <% } %>
+
     <a href="/addUser" class="btn btn-success mb-3">+ Add New User</a>
 
     <% if (users && users.length > 0) { %>
@@ -32,17 +40,17 @@
           </tr>
         </thead>
         <tbody>
-          <% users.forEach(function(user) { %>
+          <% users.forEach(function(u) { %>
             <tr>
-              <td><%= user.id %></td>
-              <td><%= user.username %></td>
-              <td><%= user.email %></td>
-              <td><%= user.address %></td>
-              <td><%= user.contact %></td>
-              <td><%= user.role %></td>
+              <td><%= u.id %></td>
+              <td><%= u.username %></td>
+              <td><%= u.email %></td>
+              <td><%= u.address %></td>
+              <td><%= u.contact %></td>
+              <td><%= u.role %></td>
               <td>
-                <a href="/updateUser/<%= user.id %>" class="btn btn-warning btn-sm">Edit</a>
-                <a href="/deleteUser/<%= user.id %>" class="btn btn-danger btn-sm" 
+                <a href="/updateUser/<%= u.id %>" class="btn btn-warning btn-sm">Edit</a>
+                <a href="/deleteUser/<%= u.id %>" class="btn btn-danger btn-sm" 
                    onclick="return confirm('Are you sure you want to delete this user?');">Delete</a>
               </td>
             </tr>
