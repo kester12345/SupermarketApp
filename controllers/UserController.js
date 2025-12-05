@@ -213,20 +213,36 @@ const UserController = {
     // ADMIN: DELETE USER
     // ============================
     deleteUser: (req, res) => {
-        db.query("DELETE FROM users WHERE id = ?", [req.params.id], (err) => {
 
-            if (err && err.code === "ER_ROW_IS_REFERENCED_2") {
-                req.flash("error", "Cannot delete user — user has existing orders.");
+        // 1. Check the role of the user being deleted
+        db.query("SELECT role FROM users WHERE id = ?", [req.params.id], (err, results) => {
+            if (err || results.length === 0) {
+                req.flash("error", "User not found.");
                 return res.redirect("/listUser");
             }
 
-            if (err) {
-                req.flash("error", "Error deleting user.");
+            // 2. Prevent deleting another admin
+            if (results[0].role === "admin") {
+                req.flash("error", "You cannot delete another admin.");
                 return res.redirect("/listUser");
             }
 
-            req.flash("success", "User deleted.");
-            res.redirect("/listUser");
+            // 3. Proceed with normal delete if NOT admin
+            db.query("DELETE FROM users WHERE id = ?", [req.params.id], (err) => {
+
+                if (err && err.code === "ER_ROW_IS_REFERENCED_2") {
+                    req.flash("error", "Cannot delete user — user has existing orders.");
+                    return res.redirect("/listUser");
+                }
+
+                if (err) {
+                    req.flash("error", "Error deleting user.");
+                    return res.redirect("/listUser");
+                }
+
+                req.flash("success", "User deleted.");
+                return res.redirect("/listUser");
+            });
         });
     },
 

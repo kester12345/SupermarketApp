@@ -152,15 +152,30 @@
 
             <div class="mb-3">
               <label class="form-label">Contact</label>
-              <input class="form-control" name="contact" value="<%= userData.contact %>" required>
+              <input 
+                  class="form-control" 
+                  name="contact" 
+                  value="<%= userData.contact %>" 
+                  required
+                  pattern="^[0-9]{8}$"
+                  title="Contact number must be exactly 8 digits."
+              >
             </div>
 
             <div class="mb-3">
               <label class="form-label">Role</label>
-              <select name="role" class="form-select" required>
-                <option value="user"  <%= userData.role === 'user'  ? 'selected' : '' %>>User</option>
-                <option value="admin" <%= userData.role === 'admin' ? 'selected' : '' %>>Admin</option>
-              </select>
+
+              <% if (userData.role === 'admin') { %>
+                  <!-- Admin role cannot be edited -->
+                  <input class="form-control" value="admin" disabled>
+                  <input type="hidden" name="role" value="admin">
+              <% } else { %>
+                  <!-- Normal user can be edited -->
+                  <select name="role" class="form-select" required>
+                    <option value="user"  <%= userData.role === 'user'  ? 'selected' : '' %>>User</option>
+                    <option value="admin" <%= userData.role === 'admin' ? 'selected' : '' %>>Admin</option>
+                  </select>
+              <% } %>
             </div>
 
             <div class="mb-3">
